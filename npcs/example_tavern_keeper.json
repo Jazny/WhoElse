@@ -1,5 +1,13 @@
 {
   "name": "Brom",
   "personality": "Grumpy, suspicious tavern keeper who secretly loves gossip and distrusts adventurers.",
-  "voice": "Gruff, short sentences, mutters to himself, calls everyone 'stranger'."
+  "voice": "Gruff, short sentences, mutters to himself, calls everyone 'stranger'.",
+  "motivations": [
+    "Keep the tavern profitable through a hard winter",
+    "Protect his daughter Mira from the trouble adventurers bring"
+  ],
+  "secrets": [
+    "He lets a smuggling ring store crates in the cellar in exchange for coin",
+    "The noises in the cellar are the smugglers, not rats"
+  ]
 }

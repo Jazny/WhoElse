@@ -1,5 +1,7 @@
 """NPCStore: saves and loads NPC profiles. Covers Features 1 and 4."""
 
+import json
+import re
 from pathlib import Path
 
 from npc_dm.config import DATA_DIR
@@ -13,31 +15,37 @@ class NPCStore:
     """
 
     def __init__(self, data_dir: Path = DATA_DIR):
-        self.data_dir = data_dir
-        # TODO: create the data folder if it does not exist yet
+        self.data_dir = Path(data_dir)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
 
     def save(self, npc: NPC) -> None:
         """Write an NPC's profile to its JSON file (Feature 1)."""
-        # TODO: use npc.to_dict() and write it to the NPC's file
-        raise NotImplementedError
+        path = self._path_for(npc.name)
+        path.write_text(json.dumps(npc.to_dict(), indent=2) + "\n", encoding="utf-8")
 
     def load(self, name: str) -> NPC:
         """Read one NPC from disk by name. Raise an error if not found."""
-        # TODO: read the file and return NPC.from_dict(...)
-        raise NotImplementedError
+        path = self._path_for(name)
+        if not path.exists():
+            raise FileNotFoundError(f"No NPC named {name!r} (looked for {path})")
+        return NPC.from_dict(json.loads(path.read_text(encoding="utf-8")))
 
     def list_all(self) -> list[NPC]:
-        """Return every saved NPC (Feature 4)."""
-        # TODO: loop over the JSON files in the data folder and load each one.
-        #       Skip files ending in "_history.json" (those belong to memory.py)
-        raise NotImplementedError
+        """Return every saved NPC (Feature 4), sorted by name."""
+        npcs = [
+            NPC.from_dict(json.loads(path.read_text(encoding="utf-8")))
+            for path in self.data_dir.glob("*.json")
+            if not path.name.endswith("_history.json")
+        ]
+        return sorted(npcs, key=lambda npc: npc.name.lower())
 
     def exists(self, name: str) -> bool:
         """True if an NPC with this name has already been saved."""
-        # TODO: check whether the NPC's file exists
-        raise NotImplementedError
+        return self._path_for(name).exists()
 
     def _path_for(self, name: str) -> Path:
         """Turn an NPC name into a safe file path, e.g. "Old Brom" -> npcs/old_brom.json"""
-        # TODO: lowercase the name, swap spaces for underscores, add .json
-        raise NotImplementedError
+        slug = re.sub(r"[^a-z0-9]+", "_", name.strip().lower()).strip("_")
+        if not slug:
+            raise ValueError(f"NPC name {name!r} has no letters or digits")
+        return self.data_dir / f"{slug}.json"
