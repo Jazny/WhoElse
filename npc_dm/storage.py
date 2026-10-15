@@ -8,6 +8,14 @@ from npc_dm.config import DATA_DIR
 from npc_dm.models import NPC
 
 
+def slugify(name: str) -> str:
+    """Turn an NPC name into a safe file stem, e.g. "Old Brom" -> "old_brom"."""
+    slug = re.sub(r"[^a-z0-9]+", "_", name.strip().lower()).strip("_")
+    if not slug:
+        raise ValueError(f"NPC name {name!r} has no letters or digits")
+    return slug
+
+
 class NPCStore:
     """Keeps one JSON file per NPC inside the data folder.
 
@@ -45,7 +53,4 @@ class NPCStore:
 
     def _path_for(self, name: str) -> Path:
         """Turn an NPC name into a safe file path, e.g. "Old Brom" -> npcs/old_brom.json"""
-        slug = re.sub(r"[^a-z0-9]+", "_", name.strip().lower()).strip("_")
-        if not slug:
-            raise ValueError(f"NPC name {name!r} has no letters or digits")
-        return self.data_dir / f"{slug}.json"
+        return self.data_dir / f"{slugify(name)}.json"

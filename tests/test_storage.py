@@ -59,3 +59,26 @@ def test_creates_data_folder(tmp_path):
     """The data folder is created if it does not exist yet."""
     NPCStore(tmp_path / "new_folder")
     assert (tmp_path / "new_folder").is_dir()
+
+
+def test_save_overwrites_existing(tmp_path):
+    """Saving an NPC with the same name replaces the old profile."""
+    store = NPCStore(tmp_path)
+    store.save(make_npc())
+    updated = make_npc()
+    updated.personality = "Cheerful, now that the debt is paid."
+    store.save(updated)
+    assert store.load("Brom") == updated
+    assert len(store.list_all()) == 1
+
+
+def test_load_is_case_insensitive(tmp_path):
+    """"brom" and "BROM" load the NPC saved as "Brom"."""
+    store = NPCStore(tmp_path)
+    store.save(make_npc())
+    assert store.load("brom") == store.load("BROM") == make_npc()
+
+
+def test_list_all_empty(tmp_path):
+    """An empty data folder gives an empty list."""
+    assert NPCStore(tmp_path).list_all() == []
