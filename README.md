@@ -29,7 +29,7 @@ npc_dm_helper/
 │   ├── chat.py            <- NPCChat: builds prompt, calls Claude (Feature 2)
 │   └── cli.py             <- command-line commands (ties it all together)
 ├── npcs/                  <- NPC profiles and histories live here as JSON
-│   └── example_tavern_keeper.json
+│   └── brom.json
 └── tests/                 <- one test file per module
     ├── test_models.py
     ├── test_storage.py
