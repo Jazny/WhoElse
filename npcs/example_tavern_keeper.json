@@ -2,6 +2,7 @@
   "name": "Brom",
   "personality": "Grumpy, suspicious tavern keeper who secretly loves gossip and distrusts adventurers.",
   "voice": "Gruff, short sentences, mutters to himself, calls everyone 'stranger'.",
+  "history": "Fought twenty years in the border wars, lost two fingers at the Siege of Kell, and bought the Rusty Flagon with his soldier's pension. Raised his daughter Mira alone after his wife died of fever.",
   "motivations": [
     "Keep the tavern profitable through a hard winter",
     "Protect his daughter Mira from the trouble adventurers bring"
