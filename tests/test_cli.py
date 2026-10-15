@@ -2,6 +2,10 @@
 at tmp_path (monkeypatch DATA_DIR or run inside runner.isolated_filesystem()).
 Never call the real API: replace NPCChat's client with a fake."""
 
+from click.testing import CliRunner
+
+from npc_dm.cli import main
+
 
 # --- create-npc (Feature 1) ---------------------------------------------------
 
@@ -108,5 +112,7 @@ def test_clear_memory_unknown_npc(tmp_path):
 
 def test_help_lists_all_commands():
     """npc-dm --help lists create-npc, list-npcs, talk-to and clear-memory."""
-    # TODO: invoke main with --help, assert all four command names appear
-    pass
+    result = CliRunner().invoke(main, ["--help"])
+    assert result.exit_code == 0
+    for command in ("create-npc", "list-npcs", "talk-to", "clear-memory"):
+        assert command in result.output
