@@ -31,10 +31,13 @@ def test_create_npc_splits_multiple_motivations_and_secrets(tmp_path):
     pass
 
 
-def test_create_npc_existing_name_asks_before_overwriting(tmp_path):
-    """Creating an NPC whose name already exists asks before replacing it."""
-    # TODO: save "Brom", run create-npc for "Brom" and answer "n", assert the
-    #       original profile is unchanged
+def test_create_npc_existing_name_is_refused(tmp_path):
+    """Creating an NPC whose name already exists fails and keeps the original."""
+    # TODO: save "Brom", run create-npc and enter "Brom" (also try "brom"),
+    #       assert a non-zero exit code, a message saying the NPC already
+    #       exists (no traceback), and that NPCStore.load("Brom") is unchanged.
+    #       The command should check the name right after asking for it, before
+    #       the remaining prompts, so the DM does not type everything for nothing.
     pass
 
 
