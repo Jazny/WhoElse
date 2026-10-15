@@ -9,7 +9,7 @@ should do, and a `TODO` where the real code goes.
 
 ## The four features
 
-1. **Create an NPC**: save a name, personality, and voice
+1. **Create an NPC**: save a name, personality, voice, backstory, motivations, and secrets
 2. **Talk to an NPC**: send a message, get an in-character reply from Claude
 3. **NPC memory**: each NPC remembers its past exchanges
 4. **List and switch NPCs**: see all NPCs, pick which one to talk to
