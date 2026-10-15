@@ -10,7 +10,7 @@ MODEL_NAME = "claude-sonnet-5-5"
 
 # How many past exchanges (DM message + NPC reply pairs) get sent back to
 # Claude each time. Keeps prompts small and cheap for the proof of concept.
-MAX_HISTORY_EXCHANGES = 15
+MAX_HISTORY_EXCHANGES = 20
 
 # Cap on the length of each NPC reply.
 MAX_REPLY_TOKENS = 400
