@@ -1,113 +1,212 @@
-"""Tests for npc_dm/cli.py. Use click.testing.CliRunner and point the data folder
-at tmp_path (monkeypatch DATA_DIR or run inside runner.isolated_filesystem()).
-Never call the real API: replace NPCChat's client with a fake."""
+"""Tests for npc_dm/cli.py. Uses click.testing.CliRunner, which runs the commands
+inside the test and lets us type answers and read the output. The data_dir and
+fake_client fixtures (tests/conftest.py) keep every test on a temporary folder
+and a fake Claude, so nothing touches real NPCs or the real API."""
 
+import anthropic
 from click.testing import CliRunner
 
+from fakes import FakeClient
 from npc_dm.cli import main
+from npc_dm.chat import NPCChat
+from npc_dm.memory import NPCMemory
+from npc_dm.models import Exchange, NPC
+from npc_dm.storage import NPCStore
+
+
+def run(*args, input=None):
+    return CliRunner().invoke(main, list(args), input=input)
+
+
+def save_npc(data_dir, name="Brom", **overrides) -> NPC:
+    fields = dict(
+        name=name,
+        personality="Grumpy tavern keeper.",
+        voice="Gruff.",
+        backstory="Retired soldier.",
+        motivations=["Keep the tavern open"],
+        secrets=["Hides smuggled goods in the cellar"],
+    )
+    fields.update(overrides)
+    npc = NPC(**fields)
+    NPCStore(data_dir).save(npc)
+    return npc
 
 
 # --- create-npc (Feature 1) ---------------------------------------------------
 
 
-def test_create_npc_saves_profile(tmp_path):
+def test_create_npc_saves_profile(data_dir):
     """Answering the prompts saves an NPC that NPCStore can load."""
-    # TODO: invoke create-npc with input for name, personality, voice,
-    #       backstory, motivations, secrets; assert exit code 0, a confirmation
-    #       message, and NPCStore.load(name) matches what was typed
-    pass
+    answers = "Brom\nGrumpy tavern keeper\nGruff\nRetired soldier\nKeep the tavern open\nHides crates\n"
+    result = run("create-npc", input=answers)
+    assert result.exit_code == 0
+    assert "Saved Brom" in result.output
+    assert NPCStore(data_dir).load("Brom") == NPC(
+        name="Brom",
+        personality="Grumpy tavern keeper",
+        voice="Gruff",
+        backstory="Retired soldier",
+        motivations=["Keep the tavern open"],
+        secrets=["Hides crates"],
+    )
 
 
-def test_create_npc_optional_fields_can_be_blank(tmp_path):
+def test_create_npc_optional_fields_can_be_blank(data_dir):
     """Backstory, motivations and secrets can be skipped with Enter."""
-    # TODO: give blank answers for the optional prompts, assert the saved NPC
-    #       has "" and [] for them
-    pass
+    result = run("create-npc", input="Brom\nGrumpy\nGruff\n\n\n\n")
+    assert result.exit_code == 0
+    npc = NPCStore(data_dir).load("Brom")
+    assert (npc.backstory, npc.motivations, npc.secrets) == ("", [], [])
 
 
-def test_create_npc_splits_multiple_motivations_and_secrets(tmp_path):
-    """Several motivations or secrets can be entered (e.g. separated by ';')."""
-    # TODO: enter "Protect Mira; Pay the debt", assert two motivations saved
-    pass
+def test_create_npc_splits_multiple_motivations_and_secrets(data_dir):
+    """Several motivations or secrets can be entered, separated by ';'."""
+    answers = "Brom\nGrumpy\nGruff\n\nProtect Mira;  Pay the debt ;;\nSecret one; secret two\n"
+    run("create-npc", input=answers)
+    npc = NPCStore(data_dir).load("Brom")
+    assert npc.motivations == ["Protect Mira", "Pay the debt"]
+    assert npc.secrets == ["Secret one", "secret two"]
 
 
-def test_create_npc_existing_name_is_refused(tmp_path):
+def test_create_npc_existing_name_is_refused(data_dir):
     """Creating an NPC whose name already exists fails and keeps the original."""
-    # TODO: save "Brom", run create-npc and enter "Brom" (also try "brom"),
-    #       assert a non-zero exit code, a message saying the NPC already
-    #       exists (no traceback), and that NPCStore.load("Brom") is unchanged.
-    #       The command should check the name right after asking for it, before
-    #       the remaining prompts, so the DM does not type everything for nothing.
-    pass
+    original = save_npc(data_dir)
+    for typed_name in ("Brom", "brom"):
+        result = run("create-npc", input=f"{typed_name}\n")
+        assert result.exit_code != 0
+        assert "already exists" in result.output
+        assert "Personality" not in result.output  # stopped before the other prompts
+        assert "Traceback" not in result.output
+    assert NPCStore(data_dir).load("Brom") == original
+
+
+def test_create_npc_name_without_letters_is_refused(data_dir):
+    """A name like "!!!" cannot become a file name, so it gets a clear error."""
+    result = run("create-npc", input="!!!\n")
+    assert result.exit_code != 0
+    assert "Error:" in result.output
+    assert NPCStore(data_dir).list_all() == []
 
 
 # --- list-npcs (Feature 4) ----------------------------------------------------
 
 
-def test_list_npcs_shows_all(tmp_path):
+def test_list_npcs_shows_all(data_dir):
     """Every saved NPC is listed with its name and personality."""
-    # TODO: save two NPCs, invoke list-npcs, assert both names and
-    #       personalities appear in the output
-    pass
+    save_npc(data_dir, "Brom", personality="Grumpy tavern keeper.")
+    save_npc(data_dir, "Mira", personality="Curious apprentice.")
+    result = run("list-npcs")
+    assert result.exit_code == 0
+    assert "Brom: Grumpy tavern keeper." in result.output
+    assert "Mira: Curious apprentice." in result.output
 
 
-def test_list_npcs_does_not_reveal_secrets(tmp_path):
+def test_list_npcs_does_not_reveal_secrets(data_dir):
     """The list is safe to show at the table: secrets never appear."""
-    # TODO: save an NPC with a secret, invoke list-npcs, assert the secret text
-    #       is not in the output
-    pass
+    save_npc(data_dir, secrets=["Hides smuggled goods in the cellar"])
+    result = run("list-npcs")
+    assert "smuggled" not in result.output
 
 
-def test_list_npcs_empty(tmp_path):
+def test_list_npcs_empty(data_dir):
     """With no NPCs, a friendly message suggests create-npc."""
-    # TODO: invoke list-npcs on an empty folder, assert exit code 0 and a hint
-    pass
+    result = run("list-npcs")
+    assert result.exit_code == 0
+    assert "create-npc" in result.output
 
 
 # --- talk-to (Feature 2) ------------------------------------------------------
 
 
-def test_talk_to_prints_reply(tmp_path):
+def test_talk_to_prints_reply(data_dir, fake_client):
     """talk-to prints the NPC's reply."""
-    # TODO: save "Brom", fake the client to return "Rats, stranger.", invoke
-    #       talk-to Brom "What's in the cellar?", assert the reply is printed
-    pass
+    save_npc(data_dir)
+    result = run("talk-to", "Brom", "What's in the cellar?")
+    assert result.exit_code == 0
+    assert "Rats, stranger." in result.output
 
 
-def test_talk_to_name_is_case_insensitive(tmp_path):
+def test_talk_to_name_is_case_insensitive(data_dir, fake_client):
     """"brom" and "Brom" find the same NPC."""
-    # TODO: save "Brom", invoke talk-to brom "...", assert it succeeds
-    pass
+    save_npc(data_dir)
+    result = run("talk-to", "brom", "hello")
+    assert result.exit_code == 0
+    assert "Rats, stranger." in result.output
 
 
-def test_talk_to_unknown_npc(tmp_path):
+def test_talk_to_unknown_npc(data_dir, fake_client):
     """Talking to an NPC that does not exist gives a clear error."""
-    # TODO: invoke talk-to Nobody "hi", assert non-zero exit code and a message
-    #       naming the NPC (and suggesting list-npcs), no traceback
-    pass
+    result = run("talk-to", "Nobody", "hi")
+    assert result.exit_code != 0
+    assert "No NPC named 'Nobody'" in result.output
+    assert "list-npcs" in result.output
+    assert "Traceback" not in result.output
+    assert fake_client.calls == []
 
 
-def test_talk_to_remembers_previous_turns(tmp_path):
+def test_talk_to_remembers_previous_turns(data_dir, fake_client):
     """A second talk-to sends the first exchange back to Claude."""
-    # TODO: invoke talk-to twice, assert the fake client's second call received
-    #       the first DM message and reply in its messages
-    pass
+    save_npc(data_dir)
+    run("talk-to", "Brom", "What's in the cellar?")
+    run("talk-to", "Brom", "Are you sure?")
+    assert fake_client.calls[1]["messages"] == [
+        {"role": "user", "content": "What's in the cellar?"},
+        {"role": "assistant", "content": "Rats, stranger."},
+        {"role": "user", "content": "Are you sure?"},
+    ]
+
+
+def test_talk_to_missing_api_key(data_dir, monkeypatch):
+    """Without ANTHROPIC_API_KEY the user is told what to do, with no traceback."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    save_npc(data_dir)
+    result = run("talk-to", "Brom", "hello")
+    assert result.exit_code != 0
+    assert "ANTHROPIC_API_KEY" in result.output
+    assert "Traceback" not in result.output
+
+
+def test_talk_to_api_error_is_readable_and_not_saved(data_dir, monkeypatch):
+    """If Claude cannot be reached, the user sees an error and nothing is remembered."""
+    client = FakeClient(error=anthropic.AnthropicError("could not reach Claude"))
+    monkeypatch.setattr(
+        "npc_dm.cli._make_chat", lambda: NPCChat(NPCMemory(data_dir), client=client)
+    )
+    save_npc(data_dir)
+    result = run("talk-to", "Brom", "hello")
+    assert result.exit_code != 0
+    assert "could not reach Claude" in result.output
+    assert "Traceback" not in result.output
+    assert NPCMemory(data_dir).get_recent("Brom") == []
 
 
 # --- clear-memory (Feature 3) -------------------------------------------------
 
 
-def test_clear_memory_empties_history(tmp_path):
-    """clear-memory wipes the NPC's chat history and confirms."""
-    # TODO: add an exchange, invoke clear-memory Brom, assert confirmation and
-    #       NPCMemory.get_recent("Brom") == []
-    pass
+def test_clear_memory_empties_history(data_dir):
+    """clear-memory wipes the NPC's chat history, confirms, and keeps the profile."""
+    save_npc(data_dir)
+    memory = NPCMemory(data_dir)
+    memory.add_exchange("Brom", Exchange("hi", "grunt", "2026-10-14T23:05:00"))
+    result = run("clear-memory", "Brom")
+    assert result.exit_code == 0
+    assert "Cleared Brom's memory" in result.output
+    assert memory.get_recent("Brom") == []
+    assert NPCStore(data_dir).exists("Brom")
 
 
-def test_clear_memory_unknown_npc(tmp_path):
+def test_clear_memory_with_no_history(data_dir):
+    """Clearing an NPC nobody has talked to yet is fine."""
+    save_npc(data_dir)
+    assert run("clear-memory", "Brom").exit_code == 0
+
+
+def test_clear_memory_unknown_npc(data_dir):
     """Clearing an NPC that does not exist gives a clear error."""
-    # TODO: invoke clear-memory Nobody, assert non-zero exit and a message
-    pass
+    result = run("clear-memory", "Nobody")
+    assert result.exit_code != 0
+    assert "No NPC named 'Nobody'" in result.output
 
 
 # --- General ------------------------------------------------------------------
@@ -115,7 +214,7 @@ def test_clear_memory_unknown_npc(tmp_path):
 
 def test_help_lists_all_commands():
     """npc-dm --help lists create-npc, list-npcs, talk-to and clear-memory."""
-    result = CliRunner().invoke(main, ["--help"])
+    result = run("--help")
     assert result.exit_code == 0
     for command in ("create-npc", "list-npcs", "talk-to", "clear-memory"):
         assert command in result.output

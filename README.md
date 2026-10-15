@@ -73,3 +73,7 @@ npc-dm clear-memory "Brom"   # wipe that NPC's history
 pip install -e .
 export ANTHROPIC_API_KEY=your-key-here
 ```
+
+## Future Features
+
+- **Optimize communication to Anthropic API.** Currently, each message sends a request to Anthropic's Messages API and carries 4 things: the model name, a reply-length cap, the system prompt (character briefing), and the message from the sender. Look into optimizing this process.

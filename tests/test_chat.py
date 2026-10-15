@@ -1,30 +1,12 @@
 """Tests for npc_dm/chat.py. No real API calls: a fake client stands in for Anthropic."""
 
-from types import SimpleNamespace
-
 import pytest
 
+from fakes import FakeClient
 from npc_dm.chat import NPCChat
 from npc_dm.config import MAX_HISTORY_EXCHANGES, MAX_REPLY_TOKENS, MODEL_NAME
 from npc_dm.memory import NPCMemory
 from npc_dm.models import NPC, Exchange
-
-
-class FakeClient:
-    """Mimics client.messages.create and records how it was called."""
-
-    def __init__(self, reply="Rats, stranger.", error=None):
-        self.calls = []
-        self.reply = reply
-        self.error = error
-        self.messages = SimpleNamespace(create=self._create)
-
-    def _create(self, **kwargs):
-        self.calls.append(kwargs)
-        if self.error:
-            raise self.error
-        content = [SimpleNamespace(type="text", text=self.reply)] if self.reply else []
-        return SimpleNamespace(content=content)
 
 
 def make_npc(**overrides) -> NPC:
