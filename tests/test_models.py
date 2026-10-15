@@ -9,7 +9,7 @@ def test_npc_round_trip():
         name="Brom",
         personality="Grumpy tavern keeper.",
         voice="Gruff.",
-        history="Retired soldier who bought the tavern.",
+        backstory="Retired soldier who bought the tavern.",
         motivations=["Keep the tavern open"],
         secrets=["Hides smuggled goods in the cellar"],
     )
@@ -17,9 +17,9 @@ def test_npc_round_trip():
 
 
 def test_npc_without_optional_fields_loads():
-    """Older profiles without history, motivations or secrets still load with empty values."""
+    """Older profiles without backstory, motivations or secrets still load with empty values."""
     npc = NPC.from_dict({"name": "Brom", "personality": "Grumpy.", "voice": "Gruff."})
-    assert npc.history == ""
+    assert npc.backstory == ""
     assert npc.motivations == []
     assert npc.secrets == []
 

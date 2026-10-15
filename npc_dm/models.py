@@ -12,12 +12,12 @@ class NPC:
             name="Brom",
             personality="Grumpy, suspicious tavern keeper who loves gossip.",
             voice="Gruff, short sentences, mutters to himself.",
-            history="Former soldier who bought the tavern with his pension.",
+            backstory="Former soldier who bought the tavern with his pension.",
             motivations=["Keep the tavern profitable", "Protect his daughter"],
             secrets=["He fences stolen goods in the cellar"],
         )
 
-    History is the NPC's backstory (not the chat log, which lives in memory.py).
+    Backstory is where the NPC came from (the chat log lives in memory.py).
     Motivations are what the NPC wants and acts on. Secrets are things the NPC
     knows but guards, and should only reveal when it makes sense in character.
     """
@@ -25,7 +25,7 @@ class NPC:
     name: str
     personality: str
     voice: str
-    history: str = ""
+    backstory: str = ""
     motivations: list[str] = field(default_factory=list)
     secrets: list[str] = field(default_factory=list)
 
@@ -35,7 +35,7 @@ class NPC:
             "name": self.name,
             "personality": self.personality,
             "voice": self.voice,
-            "history": self.history,
+            "backstory": self.backstory,
             "motivations": list(self.motivations),
             "secrets": list(self.secrets),
         }
@@ -44,13 +44,13 @@ class NPC:
     def from_dict(cls, data: dict) -> "NPC":
         """Build an NPC from a dict loaded from JSON.
 
-        History, motivations and secrets are optional, so older profiles still load.
+        Backstory, motivations and secrets are optional, so older profiles still load.
         """
         return cls(
             name=data["name"],
             personality=data["personality"],
             voice=data["voice"],
-            history=data.get("history", ""),
+            backstory=data.get("backstory", ""),
             motivations=list(data.get("motivations", [])),
             secrets=list(data.get("secrets", [])),
         )

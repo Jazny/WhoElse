@@ -11,7 +11,7 @@ def make_npc(name: str = "Brom") -> NPC:
         name=name,
         personality="Grumpy tavern keeper.",
         voice="Gruff.",
-        history="Retired soldier who bought the tavern.",
+        backstory="Retired soldier who bought the tavern.",
         motivations=["Keep the tavern open"],
         secrets=["Hides smuggled goods in the cellar"],
     )
