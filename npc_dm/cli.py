@@ -104,6 +104,35 @@ def talk_to(npc_name: str, message: str):
     click.echo(reply)
 
 
+@main.command("chat")
+@click.argument("npc_name")
+def chat(npc_name: str):
+    """Start a conversation with NPC_NAME. Type "quit" to finish (Feature 2)."""
+    npc = _load_npc(npc_name)
+    chat_turns = _make_chat()
+    click.echo(f"Talking to {npc.name}. Type 'quit' to finish.")
+    while True:
+        try:
+            message = click.prompt("You", prompt_suffix=" > ", default="", show_default=False)
+        except (click.Abort, EOFError):
+            # Ctrl-C or Ctrl-D ends the conversation the same way "quit" does.
+            click.echo("")
+            break
+        message = message.strip()
+        if message.lower() == "quit":
+            break
+        if not message:
+            continue
+        try:
+            reply = chat_turns.talk(npc, message)
+        except (RuntimeError, anthropic.AnthropicError) as error:
+            # Keep the conversation going: one failed turn is not the end of it.
+            click.echo(f"Error: {error}")
+            continue
+        click.echo(f"{npc.name}: {reply}")
+    click.echo(f"Goodbye from {npc.name}.")
+
+
 @main.command("clear-memory")
 @click.argument("npc_name")
 def clear_memory(npc_name: str):
