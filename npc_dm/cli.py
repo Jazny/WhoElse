@@ -25,7 +25,7 @@ def _load_npc(name: str) -> NPC:
         return _store().load(name)
     except (FileNotFoundError, ValueError):
         raise click.ClickException(
-            f"No NPC named {name!r}. See saved NPCs with: npc-dm list-npcs"
+            f"No NPC named {name!r}. See saved NPCs with: whoelse list-npcs"
         ) from None
 
 
@@ -84,7 +84,7 @@ def list_npcs():
     """Show every saved NPC with a one-line summary (Feature 4)."""
     npcs = _store().list_all()
     if not npcs:
-        click.echo("No NPCs yet. Create one with: npc-dm create-npc")
+        click.echo("No NPCs yet. Create one with: whoelse create-npc")
         return
     # Secrets are left out on purpose: this list is safe to show at the table.
     for npc in npcs:
