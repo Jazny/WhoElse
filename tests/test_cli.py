@@ -181,6 +181,68 @@ def test_talk_to_api_error_is_readable_and_not_saved(data_dir, monkeypatch):
     assert NPCMemory(data_dir).get_recent("Brom") == []
 
 
+# --- chat (Feature 2, conversation mode) -------------------------------------
+
+
+def test_chat_talks_until_quit(data_dir, fake_client):
+    """Each line is sent to the NPC until the DM types quit."""
+    save_npc(data_dir)
+    result = run("chat", "Brom", input="What's in the cellar?\nAre you sure?\nquit\n")
+    assert result.exit_code == 0
+    assert result.output.count("Brom: Rats, stranger.") == 2
+    assert "Goodbye from Brom" in result.output
+    assert len(fake_client.calls) == 2
+
+
+def test_chat_remembers_earlier_lines(data_dir, fake_client):
+    """Later lines in the same conversation include the earlier exchange."""
+    save_npc(data_dir)
+    run("chat", "Brom", input="first line\nsecond line\nquit\n")
+    assert fake_client.calls[1]["messages"] == [
+        {"role": "user", "content": "first line"},
+        {"role": "assistant", "content": "Rats, stranger."},
+        {"role": "user", "content": "second line"},
+    ]
+
+
+def test_chat_quit_is_case_insensitive_and_skips_blank_lines(data_dir, fake_client):
+    """"  QUIT  " ends the chat, and empty lines are ignored without calling Claude."""
+    save_npc(data_dir)
+    result = run("chat", "Brom", input="\n   \n  QUIT  \n")
+    assert result.exit_code == 0
+    assert fake_client.calls == []
+
+
+def test_chat_survives_a_failed_turn(data_dir, monkeypatch):
+    """If one turn fails, the error is shown and the chat keeps going."""
+    client = FakeClient(error=anthropic.AnthropicError("could not reach Claude"))
+    monkeypatch.setattr(
+        "npc_dm.cli._make_chat", lambda: NPCChat(NPCMemory(data_dir), client=client)
+    )
+    save_npc(data_dir)
+    result = run("chat", "Brom", input="hello\nquit\n")
+    assert result.exit_code == 0
+    assert "could not reach Claude" in result.output
+    assert len(client.calls) == 1
+    assert NPCMemory(data_dir).get_recent("Brom") == []
+
+
+def test_chat_end_of_input_ends_cleanly(data_dir, fake_client):
+    """Ctrl-D (end of input) finishes the chat without a traceback."""
+    save_npc(data_dir)
+    result = run("chat", "Brom", input="hello\n")
+    assert result.exit_code == 0
+    assert "Traceback" not in result.output
+    assert "Goodbye from Brom" in result.output
+
+
+def test_chat_unknown_npc(data_dir, fake_client):
+    """Chatting with an NPC that does not exist gives a clear error."""
+    result = run("chat", "Nobody", input="hi\nquit\n")
+    assert result.exit_code != 0
+    assert "No NPC named 'Nobody'" in result.output
+
+
 # --- clear-memory (Feature 3) -------------------------------------------------
 
 
@@ -213,8 +275,8 @@ def test_clear_memory_unknown_npc(data_dir):
 
 
 def test_help_lists_all_commands():
-    """npc-dm --help lists create-npc, list-npcs, talk-to and clear-memory."""
+    """npc-dm --help lists create-npc, list-npcs, talk-to, chat and clear-memory."""
     result = run("--help")
     assert result.exit_code == 0
-    for command in ("create-npc", "list-npcs", "talk-to", "clear-memory"):
+    for command in ("create-npc", "list-npcs", "talk-to", "chat", "clear-memory"):
         assert command in result.output
