@@ -9,11 +9,11 @@ what has been said to it.
 
 | # | Feature | Command |
 |---|---------|---------|
-| 1 | Create an NPC (name, personality, voice, and optionally backstory, motivations, secrets) | `npc-dm create-npc` |
-| 2 | Talk to an NPC with one message | `npc-dm talk-to "Brom" "message"` |
-| 3 | Hold a back-and-forth conversation until you type `quit` | `npc-dm chat Brom` |
-| 4 | List every saved NPC (secrets are never shown) | `npc-dm list-npcs` |
-| 5 | Erase one NPC's memory and keep its profile | `npc-dm clear-memory "Brom"` |
+| 1 | Create an NPC (name, personality, voice, and optionally backstory, motivations, secrets) | `whoelse create-npc` |
+| 2 | Talk to an NPC with one message | `whoelse talk-to "Brom" "message"` |
+| 3 | Hold a back-and-forth conversation until you type `quit` | `whoelse chat Brom` |
+| 4 | List every saved NPC (secrets are never shown) | `whoelse list-npcs` |
+| 5 | Erase one NPC's memory and keep its profile | `whoelse clear-memory "Brom"` |
 
 What the NPC does with that information:
 
@@ -51,7 +51,10 @@ again in each new terminal (`source .venv/bin/activate`).
 pip install -e ".[dev]"
 ```
 
-This installs the `npc-dm` command, plus `pytest` for running the tests.
+This installs the `whoelse` command, plus `pytest` for running the tests.
+
+Run this command again whenever `pyproject.toml` changes after a `git pull`
+(for example, when a command is renamed), so the installed command stays up to date.
 
 ### Step 4: Save your API key
 
@@ -74,11 +77,11 @@ Never put the key inside the project folder or commit it to git.
 
 ```
 echo $ANTHROPIC_API_KEY    # should print your key, not an empty line
-npc-dm --help              # should list the five commands
-npc-dm list-npcs           # should show "Brom: Grumpy, suspicious tavern keeper..."
+whoelse --help              # should list the five commands
+whoelse list-npcs           # should show "Brom: Grumpy, suspicious tavern keeper..."
 ```
 
-If `npc-dm` is not found, the virtual environment is not active. Run
+If `whoelse` is not found, the virtual environment is not active. Run
 `source .venv/bin/activate` again.
 
 ## How to use it
@@ -90,7 +93,7 @@ a new, empty `npcs/` there and the existing NPCs will not appear.
 ### Create an NPC
 
 ```
-npc-dm create-npc
+whoelse create-npc
 ```
 
 The program asks, one line at a time:
@@ -110,7 +113,7 @@ Overwriting an existing NPC is not supported. To replace one, delete its file
 ### List NPCs
 
 ```
-npc-dm list-npcs
+whoelse list-npcs
 ```
 
 Prints each NPC's name and personality. Secrets, motivations and backstory are not shown.
@@ -118,7 +121,7 @@ Prints each NPC's name and personality. Secrets, motivations and backstory are n
 ### Talk to an NPC once
 
 ```
-npc-dm talk-to "Brom" "What's in the cellar?"
+whoelse talk-to "Brom" "What's in the cellar?"
 ```
 
 Prints the NPC's reply. The name is not case-sensitive, so `brom` works too.
@@ -127,7 +130,7 @@ Each call is remembered, so the next call continues the conversation.
 ### Chat back and forth
 
 ```
-npc-dm chat Brom
+whoelse chat Brom
 ```
 
 An example session (Brom's wording will differ each time):
@@ -150,7 +153,7 @@ Goodbye from Brom.
 ### Erase an NPC's memory
 
 ```
-npc-dm clear-memory "Brom"
+whoelse clear-memory "Brom"
 ```
 
 Deletes the NPC's conversation history and keeps its profile, so the NPC starts
@@ -162,7 +165,7 @@ Each error is one plain sentence, with no traceback:
 
 | Message | What to do |
 |---------|------------|
-| `No NPC named 'X'. See saved NPCs with: npc-dm list-npcs` | Check the spelling with `list-npcs`, or create the NPC. |
+| `No NPC named 'X'. See saved NPCs with: whoelse list-npcs` | Check the spelling with `list-npcs`, or create the NPC. |
 | `An NPC named 'X' already exists. Overwriting is not supported.` | Choose another name. |
 | `ANTHROPIC_API_KEY is not set...` | Complete Step 4, then open a new terminal. |
 | `Error: <message>` during a chat | Usually a connection or key problem. Check your internet and key. |
@@ -203,7 +206,7 @@ WhoElse/
 │   ├── storage.py         <- NPCStore: saves and loads NPC profiles
 │   ├── memory.py          <- NPCMemory: saves and loads chat history
 │   ├── chat.py            <- NPCChat: builds the prompt and calls Claude
-│   └── cli.py             <- the npc-dm commands
+│   └── cli.py             <- the whoelse commands
 ├── npcs/                  <- saved profiles and histories, as JSON
 │   └── brom.json          <- example NPC
 └── tests/                 <- one test file per module, plus shared helpers

@@ -275,7 +275,7 @@ def test_clear_memory_unknown_npc(data_dir):
 
 
 def test_help_lists_all_commands():
-    """npc-dm --help lists create-npc, list-npcs, talk-to, chat and clear-memory."""
+    """whoelse --help lists create-npc, list-npcs, talk-to, chat and clear-memory."""
     result = run("--help")
     assert result.exit_code == 0
     for command in ("create-npc", "list-npcs", "talk-to", "chat", "clear-memory"):
