@@ -1,44 +1,192 @@
 # WhoElse: NPC DM Helper
 
-A command-line tool that lets a Dungeons & Dragons Dungeon Master create NPCs
-and talk to them in character, powered by Claude. Each NPC has a personality,
-a voice, a backstory, motivations and secrets it guards, and remembers what has
-been said to it.
+A command-line tool for Dungeons & Dragons Dungeon Masters. You create non-player
+characters (NPCs) with a personality, voice, backstory, motivations and secrets,
+then talk to them in character. Claude plays the NPC, and each NPC remembers
+what has been said to it.
 
-## Features
+## What it can do
 
-1. **Create an NPC**: save a name, personality, voice, backstory, motivations and secrets
-2. **Talk to an NPC**: send one message, or chat back and forth until you type `quit`
-3. **NPC memory**: each NPC remembers its last 20 exchanges, even across restarts
-4. **List NPCs**: see every saved NPC (secrets are never shown)
-5. **Clear memory**: wipe one NPC's history and keep its profile
+| # | Feature | Command |
+|---|---------|---------|
+| 1 | Create an NPC (name, personality, voice, and optionally backstory, motivations, secrets) | `npc-dm create-npc` |
+| 2 | Talk to an NPC with one message | `npc-dm talk-to "Brom" "message"` |
+| 3 | Hold a back-and-forth conversation until you type `quit` | `npc-dm chat Brom` |
+| 4 | List every saved NPC (secrets are never shown) | `npc-dm list-npcs` |
+| 5 | Erase one NPC's memory and keep its profile | `npc-dm clear-memory "Brom"` |
 
-## Quick start
+What the NPC does with that information:
+
+- **Stays in character.** Claude is told to answer only as the NPC and never to mention being an AI.
+- **Acts on motivations.** Each motivation is something the NPC wants and pursues, even when nobody asks.
+- **Guards secrets.** Secrets are sent to Claude with instructions to deflect rather than reveal them. The model can still slip, so treat this as a strong hint, not a guarantee.
+- **Remembers the conversation.** Its last 20 exchanges are sent back with each new message, and they are saved to disk, so memory survives restarting the program.
+
+## Setup (first time only)
+
+You need Python 3.11 or newer and an Anthropic API key.
+
+### Step 1: Get the code
+
+```
+git clone https://github.com/Jazny/WhoElse.git
+cd WhoElse
+```
+
+### Step 2: Create a virtual environment
+
+This keeps the project's packages separate from your other Python packages.
 
 ```
 python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"          # the [dev] part adds pytest
-export ANTHROPIC_API_KEY=your-key-here
-
-npc-dm list-npcs                 # Brom is included as an example
-npc-dm chat Brom                 # type a line, press Enter; type "quit" to finish
+source .venv/bin/activate
 ```
 
-Run commands from the repository folder: NPCs are saved in its `npcs/` folder.
+Your prompt should now start with `(.venv)`. You need to activate the environment
+again in each new terminal (`source .venv/bin/activate`).
 
-## Commands
+### Step 3: Install the project
 
 ```
-npc-dm create-npc                 # prompts for the NPC's details
-npc-dm list-npcs                  # shows all saved NPCs
-npc-dm talk-to "Brom" "The party asks about the noises in the cellar"
-npc-dm chat "Brom"                # conversation mode, ends with "quit"
-npc-dm clear-memory "Brom"        # wipes that NPC's history, keeps the profile
+pip install -e ".[dev]"
 ```
 
-`create-npc` separates several motivations or secrets with `;`. It refuses a
-name that is already taken, because overwriting an NPC is not supported yet.
+This installs the `npc-dm` command, plus `pytest` for running the tests.
+
+### Step 4: Save your API key
+
+Add your key to your shell profile once, so every new terminal has it.
+
+- **macOS (zsh, the default):** open `~/.zshrc` in a text editor and add this line at the end:
+
+  ```
+  export ANTHROPIC_API_KEY=your-key-here
+  ```
+
+- **Linux (bash):** do the same in `~/.bashrc`.
+
+Replace `your-key-here` with your real key. Then either open a new terminal, or
+run `source ~/.zshrc` (or `source ~/.bashrc`) in the current one.
+
+Never put the key inside the project folder or commit it to git.
+
+### Step 5: Check the setup
+
+```
+echo $ANTHROPIC_API_KEY    # should print your key, not an empty line
+npc-dm --help              # should list the five commands
+npc-dm list-npcs           # should show "Brom: Grumpy, suspicious tavern keeper..."
+```
+
+If `npc-dm` is not found, the virtual environment is not active. Run
+`source .venv/bin/activate` again.
+
+## How to use it
+
+**Always run commands from the `WhoElse` folder.** NPCs are saved in the `npcs/`
+folder inside wherever you run the command. Running from another folder creates
+a new, empty `npcs/` there and the existing NPCs will not appear.
+
+### Create an NPC
+
+```
+npc-dm create-npc
+```
+
+The program asks, one line at a time:
+
+1. **Name** (required). If the name is already taken, the command stops right away.
+2. **Personality** (required), for example `Nervous scholar who hides a debt`.
+3. **Voice** (required), for example `Quick, fidgety, talks over people`.
+4. **Backstory** (optional). Press Enter to skip.
+5. **Motivations** (optional). Separate several with `;`, for example `Pay the debt; Keep the library open`.
+6. **Secrets** (optional). Separate several with `;`, for example `Stole the book he is hiding`.
+
+Press Enter on any optional question to skip it. Then it prints `Saved <name>.`
+
+Overwriting an existing NPC is not supported. To replace one, delete its file
+(`npcs/<name>.json`) and its history (`npcs/<name>_history.json`) by hand, then create it again.
+
+### List NPCs
+
+```
+npc-dm list-npcs
+```
+
+Prints each NPC's name and personality. Secrets, motivations and backstory are not shown.
+
+### Talk to an NPC once
+
+```
+npc-dm talk-to "Brom" "What's in the cellar?"
+```
+
+Prints the NPC's reply. The name is not case-sensitive, so `brom` works too.
+Each call is remembered, so the next call continues the conversation.
+
+### Chat back and forth
+
+```
+npc-dm chat Brom
+```
+
+```
+Talking to Brom. Type 'quit' to finish.
+You > What's in the cellar?
+Brom: *grunts* Rats, stranger. Nothing worth your time.
+You > Are you sure?
+Brom: ...
+You > quit
+Goodbye from Brom.
+```
+
+- Type a line and press Enter to send it.
+- Blank lines are ignored.
+- Type `quit` (any capitalization) to finish. Ctrl-D also finishes.
+- If a reply fails, for example because you are offline, you see an `Error:` line and the chat continues.
+
+### Erase an NPC's memory
+
+```
+npc-dm clear-memory "Brom"
+```
+
+Deletes the NPC's conversation history and keeps its profile, so the NPC starts
+fresh but keeps the same personality and secrets.
+
+## Errors you may see
+
+Each error is one plain sentence, with no traceback:
+
+| Message | What to do |
+|---------|------------|
+| `No NPC named 'X'. See saved NPCs with: npc-dm list-npcs` | Check the spelling with `list-npcs`, or create the NPC. |
+| `An NPC named 'X' already exists. Overwriting is not supported.` | Choose another name. |
+| `ANTHROPIC_API_KEY is not set...` | Complete Step 4, then open a new terminal. |
+| `Error: <message>` during a chat | Usually a connection or key problem. Check your internet and key. |
+
+## Settings
+
+These live in `npc_dm/config.py`:
+
+| Setting | Current value | Meaning |
+|---------|---------------|---------|
+| `MODEL_NAME` | `claude-sonnet-5-5` | Which Claude model plays the NPCs |
+| `MAX_REPLY_TOKENS` | `400` | Longest reply Claude may write |
+| `MAX_HISTORY_EXCHANGES` | `20` | How many past exchanges each new message includes |
+| `DATA_DIR` | `npcs` | Where NPC profiles and histories are saved |
+
+Edit the file and run the command again. No reinstall is needed.
+
+## Files
+
+Saved data lives in `npcs/`, as plain JSON you can open and read:
+
+- `npcs/<name>.json`: the NPC's profile, for example `brom.json`.
+- `npcs/<name>_history.json`: the conversation history, for example `brom_history.json`.
+
+The repo includes `npcs/brom.json`, an example tavern keeper, so you can try the
+commands right away.
 
 ## Folder layout
 
@@ -55,7 +203,7 @@ WhoElse/
 │   ├── chat.py            <- NPCChat: builds the prompt and calls Claude
 │   └── cli.py             <- the npc-dm commands
 ├── npcs/                  <- saved profiles and histories, as JSON
-│   └── brom.json          <- example NPC (histories appear as *_history.json)
+│   └── brom.json          <- example NPC
 └── tests/                 <- one test file per module, plus shared helpers
     ├── fakes.py           <- a stand-in for the Claude client
     ├── conftest.py        <- shared test fixtures
@@ -83,15 +231,15 @@ cli.py  ──>  NPCStore   (create, load, list NPCs)
 
 `models.py` is used by everything. `config.py` holds shared settings.
 
-## Tests
+## Running the tests
 
 ```
 pytest
 ```
 
-The tests never call the real API. Two tests call Claude for real and run only
-when `ANTHROPIC_API_KEY` is set; they check that Brom stays in character and
-does not blurt out his secret, which depends on the model and may vary.
+The tests never call the real API and never touch the real `npcs/` folder. Two
+tests call Claude for real and run only when `ANTHROPIC_API_KEY` is set. Their
+results depend on the model and can vary between runs.
 
 ## Future Features
 
