@@ -130,6 +130,8 @@ Each call is remembered, so the next call continues the conversation.
 npc-dm chat Brom
 ```
 
+An example session (Brom's wording will differ each time):
+
 ```
 Talking to Brom. Type 'quit' to finish.
 You > What's in the cellar?
