@@ -27,9 +27,22 @@ class NPCStore:
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
     def save(self, npc: NPC) -> None:
-        """Write an NPC's profile to its JSON file (Feature 1)."""
+        """Write a new NPC's profile to its JSON file (Feature 1).
+
+        Overwriting is not allowed for now: if an NPC with this name (or a name
+        that maps to the same file, like "brom" and "Brom") already exists,
+        raise FileExistsError and leave the saved profile untouched.
+        """
         path = self._path_for(npc.name)
-        path.write_text(json.dumps(npc.to_dict(), indent=2) + "\n", encoding="utf-8")
+        try:
+            # Mode "x" creates the file and fails if it already exists, so there
+            # is no gap between checking and writing.
+            with path.open("x", encoding="utf-8") as file:
+                file.write(json.dumps(npc.to_dict(), indent=2) + "\n")
+        except FileExistsError:
+            raise FileExistsError(
+                f"An NPC named {npc.name!r} already exists ({path}); overwriting is not supported"
+            ) from None
 
     def load(self, name: str) -> NPC:
         """Read one NPC from disk by name. Raise an error if not found."""

@@ -3,6 +3,14 @@
 Most use a fake Anthropic client so they run offline. The one marked "live"
 calls the real API and should be skipped unless ANTHROPIC_API_KEY is set."""
 
+from pathlib import Path
+
+from npc_dm.chat import NPCChat
+from npc_dm.memory import NPCMemory
+from npc_dm.storage import NPCStore
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 
 def test_full_flow_with_fake_client(tmp_path):
     """Create an NPC, list it, talk twice, clear memory, talk again."""
@@ -15,11 +23,13 @@ def test_full_flow_with_fake_client(tmp_path):
     pass
 
 
-def test_example_npc_loads_and_builds_prompt():
+def test_example_npc_loads_and_builds_prompt(tmp_path):
     """The shipped npcs/brom.json loads and produces a full system prompt."""
-    # TODO: NPCStore("npcs").load("Brom"), build_system_prompt, assert the
-    #       backstory, each motivation and each secret appear
-    pass
+    npc = NPCStore(REPO_ROOT / "npcs").load("Brom")
+    prompt = NPCChat(NPCMemory(tmp_path), client=object()).build_system_prompt(npc)
+    assert npc.backstory in prompt
+    for line in npc.motivations + npc.secrets:
+        assert line in prompt
 
 
 def test_profile_and_history_files_on_disk(tmp_path):

@@ -61,15 +61,38 @@ def test_creates_data_folder(tmp_path):
     assert (tmp_path / "new_folder").is_dir()
 
 
-def test_save_overwrites_existing(tmp_path):
-    """Saving an NPC with the same name replaces the old profile."""
+def test_save_existing_name_raises(tmp_path):
+    """Saving an NPC whose name is taken raises and keeps the original profile."""
+    store = NPCStore(tmp_path)
+    original = make_npc()
+    store.save(original)
+    replacement = make_npc()
+    replacement.personality = "Cheerful, now that the debt is paid."
+    with pytest.raises(FileExistsError, match="Brom"):
+        store.save(replacement)
+    assert store.load("Brom") == original
+    assert len(store.list_all()) == 1
+
+
+def test_save_same_file_different_spelling_raises(tmp_path):
+    """Names that map to the same file ("Brom" / "brom", "Old Brom" / "old_brom") collide."""
+    store = NPCStore(tmp_path)
+    store.save(make_npc("Brom"))
+    with pytest.raises(FileExistsError):
+        store.save(make_npc("brom"))
+    store.save(make_npc("Old Brom"))
+    with pytest.raises(FileExistsError):
+        store.save(make_npc("old_brom"))
+
+
+def test_failed_save_leaves_file_intact_on_disk(tmp_path):
+    """A refused save does not touch the bytes already on disk."""
     store = NPCStore(tmp_path)
     store.save(make_npc())
-    updated = make_npc()
-    updated.personality = "Cheerful, now that the debt is paid."
-    store.save(updated)
-    assert store.load("Brom") == updated
-    assert len(store.list_all()) == 1
+    before = (tmp_path / "brom.json").read_bytes()
+    with pytest.raises(FileExistsError):
+        store.save(make_npc())
+    assert (tmp_path / "brom.json").read_bytes() == before
 
 
 def test_load_is_case_insensitive(tmp_path):
