@@ -3,6 +3,8 @@ inside the test and lets us type answers and read the output. The data_dir and
 fake_client fixtures (tests/conftest.py) keep every test on a temporary folder
 and a fake Claude, so nothing touches real NPCs or the real API."""
 
+import os
+
 import anthropic
 from click.testing import CliRunner
 
@@ -269,6 +271,25 @@ def test_clear_memory_unknown_npc(data_dir):
     result = run("clear-memory", "Nobody")
     assert result.exit_code != 0
     assert "No NPC named 'Nobody'" in result.output
+
+
+# --- .env file ------------------------------------------------------------------
+
+
+def test_env_file_supplies_api_key(data_dir, monkeypatch):
+    """A .env file in the folder the command runs from provides ANTHROPIC_API_KEY."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    (data_dir / ".env").write_text("ANTHROPIC_API_KEY=from-dotenv\n")
+    assert run("list-npcs").exit_code == 0
+    assert os.environ["ANTHROPIC_API_KEY"] == "from-dotenv"
+
+
+def test_shell_variable_wins_over_env_file(data_dir, monkeypatch):
+    """A key already exported in the shell is not replaced by the .env file."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "from-shell")
+    (data_dir / ".env").write_text("ANTHROPIC_API_KEY=from-dotenv\n")
+    run("list-npcs")
+    assert os.environ["ANTHROPIC_API_KEY"] == "from-shell"
 
 
 # --- General ------------------------------------------------------------------
