@@ -58,7 +58,20 @@ Run this command again whenever `pyproject.toml` changes after a `git pull`
 
 ### Step 4: Save your API key
 
-Add your key to your shell profile once, so every new terminal has it.
+Pick one of these two options.
+
+**Option A: a `.env` file in the project folder.** Create a file named `.env`
+in the `WhoElse` folder containing this single line:
+
+```
+ANTHROPIC_API_KEY=your-key-here
+```
+
+`whoelse` reads it every time you run a command from that folder. The file is
+listed in `.gitignore`, so git will not commit it. Do not rename it or move the
+key into any other file in the project.
+
+**Option B: your shell profile.** This makes the key available in every terminal.
 
 - **macOS (zsh, the default):** open `~/.zshrc` in a text editor and add this line at the end:
 
@@ -68,15 +81,16 @@ Add your key to your shell profile once, so every new terminal has it.
 
 - **Linux (bash):** do the same in `~/.bashrc`.
 
-Replace `your-key-here` with your real key. Then either open a new terminal, or
-run `source ~/.zshrc` (or `source ~/.bashrc`) in the current one.
+Then either open a new terminal, or run `source ~/.zshrc` (or `source ~/.bashrc`)
+in the current one.
 
-Never put the key inside the project folder or commit it to git.
+In both options, replace `your-key-here` with your real key, with no quotes or
+spaces around `=`. If you set the key in both places, the shell profile wins.
 
 ### Step 5: Check the setup
 
 ```
-echo $ANTHROPIC_API_KEY    # should print your key, not an empty line
+echo $ANTHROPIC_API_KEY    # Option B only: should print your key, not an empty line
 whoelse --help              # should list the five commands
 whoelse list-npcs           # should show "Brom: Grumpy, suspicious tavern keeper..."
 ```
@@ -167,7 +181,7 @@ Each error is one plain sentence, with no traceback:
 |---------|------------|
 | `No NPC named 'X'. See saved NPCs with: whoelse list-npcs` | Check the spelling with `list-npcs`, or create the NPC. |
 | `An NPC named 'X' already exists. Overwriting is not supported.` | Choose another name. |
-| `ANTHROPIC_API_KEY is not set...` | Complete Step 4, then open a new terminal. |
+| `ANTHROPIC_API_KEY is not set...` | Complete Step 4. With a `.env` file, run the command from the `WhoElse` folder; with the shell profile, open a new terminal. |
 | `Error: <message>` during a chat | Usually a connection or key problem. Check your internet and key. |
 
 ## Settings
@@ -243,7 +257,7 @@ pytest
 ```
 
 The tests never call the real API and never touch the real `npcs/` folder. Two
-tests call Claude for real and run only when `ANTHROPIC_API_KEY` is set. Their
+tests call Claude for real and run only when `ANTHROPIC_API_KEY` is set in the shell (the tests do not read `.env`). Their
 results depend on the model and can vary between runs.
 
 ## Future Features

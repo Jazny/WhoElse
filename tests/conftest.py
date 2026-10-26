@@ -10,8 +10,12 @@ from npc_dm.memory import NPCMemory
 
 @pytest.fixture
 def data_dir(tmp_path, monkeypatch):
-    """Point the CLI at an empty temporary folder instead of the real npcs/."""
+    """Point the CLI at an empty temporary folder instead of the real npcs/.
+
+    Also run from that folder, so a developer's own .env file in the repo is
+    never picked up by the CLI during tests."""
     monkeypatch.setattr(cli, "DATA_DIR", tmp_path)
+    monkeypatch.chdir(tmp_path)
     return tmp_path
 
 

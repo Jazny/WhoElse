@@ -2,6 +2,7 @@
 
 import anthropic
 import click
+from dotenv import find_dotenv, load_dotenv
 
 from npc_dm.chat import NPCChat
 from npc_dm.config import DATA_DIR
@@ -37,6 +38,9 @@ def _split(text: str) -> list[str]:
 @click.group()
 def main():
     """NPC DM Helper: create NPCs and talk to them in character."""
+    # Read settings such as ANTHROPIC_API_KEY from a .env file in the folder the
+    # command runs from. A variable already set in the shell wins over the file.
+    load_dotenv(find_dotenv(usecwd=True))
 
 
 @main.command("create-npc")
