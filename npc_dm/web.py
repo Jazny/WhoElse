@@ -5,6 +5,7 @@ The page (static/index.html) talks to these JSON endpoints:
 
     GET    /api/npcs                  list NPCs (name and personality only)
     POST   /api/npcs                  create an NPC
+    GET    /api/npcs/<name>           the NPC's full profile, secrets included (DM only)
     GET    /api/npcs/<name>/history   past exchanges, oldest first
     POST   /api/npcs/<name>/messages  send {"message": ...}, get {"reply": ...}
     DELETE /api/npcs/<name>/history   clear the NPC's memory
@@ -88,6 +89,10 @@ class WebApp:
             ) from None
         return {"name": npc.name, "personality": npc.personality}
 
+    def profile(self, name: str) -> dict:
+        # Everything the DM entered, secrets included. The page only shows it on request.
+        return self._load(name).to_dict()
+
     def history(self, name: str) -> list[dict]:
         npc = self._load(name)
         return [exchange.to_dict() for exchange in self.memory.get_recent(npc.name, limit=sys.maxsize)]
@@ -145,6 +150,8 @@ def make_handler(app: WebApp) -> type[BaseHTTPRequestHandler]:
                     result = app.list_npcs()
                 elif method == "POST" and not rest:
                     result = app.create_npc(self._read_json())
+                elif len(rest) == 1 and method == "GET":
+                    result = app.profile(rest[0])
                 elif len(rest) == 2 and rest[1] == "history" and method == "GET":
                     result = app.history(rest[0])
                 elif len(rest) == 2 and rest[1] == "history" and method == "DELETE":

@@ -72,6 +72,22 @@ def test_list_hides_secrets(base_url, tmp_path):
     assert npcs == [{"name": "Brom", "personality": "Grumpy tavern keeper."}]
 
 
+def test_profile_shows_everything_entered(base_url, tmp_path):
+    """The character information box gets the full profile, secrets included."""
+    save_brom(tmp_path)
+    status, npc = request(base_url, "GET", "/api/npcs/brom")
+    assert status == 200
+    assert npc["name"] == "Brom"
+    assert npc["voice"] == "Gruff."
+    assert npc["secrets"] == ["Hides smuggled goods in the cellar"]
+
+
+def test_profile_unknown_npc_is_404(base_url):
+    status, data = request(base_url, "GET", "/api/npcs/Nobody")
+    assert status == 404
+    assert "No NPC named 'Nobody'" in data["error"]
+
+
 def test_create_npc_saves_profile(base_url, tmp_path):
     body = {
         "name": "Mira",
