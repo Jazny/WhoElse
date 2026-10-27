@@ -249,19 +249,91 @@ WhoElse/
 
 ## How the pieces connect
 
-```
-cli.py  ──>  NPCStore   (create, load, list NPCs)
-   │
-   ├──────>  NPCMemory  (read/write past exchanges)
-   │
-   └──────>  NPCChat    (talk to an NPC)
-                 │
-                 ├──>  NPCStore   (the NPC's profile, via the caller)
-                 ├──>  NPCMemory  (recent exchanges)
-                 └──>  Claude API (generate the reply)
+Both ways in, the terminal and the chat page, use the same three classes.
+
+```mermaid
+flowchart LR
+    term["Terminal<br/>whoelse chat, create-npc, ..."]
+    page["Browser page<br/>opened by whoelse web"]
+    env[".env file<br/>ANTHROPIC_API_KEY"]
+    cli["cli.py<br/>the whoelse commands"]
+    web["web.py<br/>local JSON endpoints"]
+
+    subgraph core["Shared by both"]
+        direction TB
+        store["NPCStore<br/>storage.py"]
+        chat["NPCChat<br/>chat.py"]
+        memory["NPCMemory<br/>memory.py"]
+    end
+
+    subgraph data["Files and Claude"]
+        direction TB
+        profile[("npcs/brom.json<br/>profile")]
+        claude["Anthropic API<br/>claude-sonnet-5-5"]
+        history[("npcs/brom_history.json<br/>chat history")]
+    end
+
+    term -->|typed command| cli
+    page <-->|fetch / JSON| web
+    env -->|loaded at startup| cli
+    cli -->|whoelse web starts it| web
+    cli -->|calls| core
+    web -->|calls| core
+
+    store <-->|write once / read| profile
+    chat <-->|prompt / reply| claude
+    chat <-->|last 20 / save turn| memory
+    memory <-->|append, delete / read| history
 ```
 
-`web.py` uses the same three pieces in the same way. `models.py` is used by everything. `config.py` holds shared settings.
+When any `whoelse` command starts, `cli.py` copies the key from `.env` into the
+environment (a key already exported in your shell wins). `NPCChat` reads it from
+there, so a missing key only shows up when you send a message. Profiles and
+histories are separate files on purpose: clearing memory never touches the NPC.
+
+### One chat message, step by step
+
+```mermaid
+sequenceDiagram
+    actor You
+    participant Front as cli.py / web.py
+    participant Store as NPCStore
+    participant Chat as NPCChat
+    participant Memory as NPCMemory
+    participant Claude as Claude API
+
+    You->>Front: "Where's the key?"
+    Front->>Store: load("Brom")
+    Store-->>Front: NPC from brom.json
+    Front->>Chat: talk(npc, message)
+    Chat->>Chat: build system prompt
+    Chat->>Memory: get_recent(20)
+    Memory-->>Chat: past exchanges
+    Chat->>Claude: system prompt + history + new message
+    Claude-->>Chat: NPC reply
+    Chat->>Memory: add_exchange (saves brom_history.json)
+    Chat-->>Front: reply
+    Front-->>You: printed, or shown on the page
+```
+
+The system prompt is built from the profile: personality, voice, backstory,
+motivations, secrets, and rules for guarding secrets and staying in character.
+The exchange is saved only after Claude answers, so a failed call leaves the
+history unchanged. The terminal shows an `Error:` line and the chat continues;
+the page gets the error text back.
+
+### Every action, both ways
+
+| Action | Terminal | Chat page request | Files touched |
+|--------|----------|-------------------|---------------|
+| Create an NPC | `whoelse create-npc` | `POST /api/npcs` | writes `npcs/<name>.json` |
+| List NPCs | `whoelse list-npcs` | `GET /api/npcs` | reads all profiles |
+| View character information | (open the JSON file) | `GET /api/npcs/<name>` | reads the profile |
+| Send a message | `whoelse chat` or `talk-to` | `POST /api/npcs/<name>/messages` | reads profile and history, appends to history |
+| Open a past chat | (not needed) | `GET /api/npcs/<name>/history` | reads history |
+| Clear memory | `whoelse clear-memory` | `DELETE /api/npcs/<name>/history` | deletes `npcs/<name>_history.json` |
+
+`models.py` is used by everything. `config.py` holds shared settings.
 
 ## Running the tests
 
