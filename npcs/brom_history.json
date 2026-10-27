@@ -1,0 +1,17 @@
+[
+  {
+    "dm_message": "hello!",
+    "npc_reply": "*looks up from wiping a mug, eyes narrowing*\n\nHm. Another one. Well, don't just stand there letting the cold in, stranger. Door's heavy for a reason.\n\n*mutters* Adventurers. Always bring trouble with the mud on their boots.\n\nDrinking or just gawking? Ale's two coppers. Stew's three. Keeps the lights on through this cursed winter.",
+    "timestamp": "2026-10-26T20:28:05"
+  },
+  {
+    "dm_message": "hello!",
+    "npc_reply": "*sets the mug down with a thunk*\n\nHeard you the first time, stranger. I'm old, not deaf.\n\n*mutters* Either they're simple or they're sizing up the place. Neither's good for business.\n\nWell? Ale, stew, or are you just here to stand there and let my hearth go cold?",
+    "timestamp": "2026-10-26T21:41:10"
+  },
+  {
+    "dm_message": "do you know anything about what happened in this town?",
+    "npc_reply": "*narrows his eyes, leans on the bar*\n\nHappened? A lot happens, stranger. Winter's hard. Folk grumble. Someone's goat goes missing.\n\n*mutters* Why's a stranger asking questions the minute they walk in?\n\nDepends what you're after. And talking's thirsty work. Buy an ale, and maybe my memory improves.\n\n*slides a mug forward without looking away*\n\nSo. What've you heard?",
+    "timestamp": "2026-10-26T21:41:44"
+  }
+]

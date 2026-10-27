@@ -26,7 +26,8 @@ class NPCChat:
         if client is None:
             if not os.environ.get("ANTHROPIC_API_KEY"):
                 raise RuntimeError(
-                    "ANTHROPIC_API_KEY is not set. Run: export ANTHROPIC_API_KEY=your-key-here"
+                    "ANTHROPIC_API_KEY is not set. Add it to the .env file in the project folder, "
+                    "or run: export ANTHROPIC_API_KEY=your-key-here"
                 )
             client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
         self.client = client
