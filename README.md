@@ -172,10 +172,13 @@ This starts a small web page on your own computer and opens it in your browser
 - Pick an NPC from the list on the left and chat with it. Past conversation is shown.
 - Create a new NPC with **New NPC** (the same fields as `create-npc`).
 - Erase the NPC's memory with **Clear memory**.
+- See everything you entered about an NPC: hover over its name, click the **⋯**
+  button, then **View character information**. This box does show secrets,
+  so close it before turning the screen toward your players.
 
 It uses the same NPCs, memory and Claude settings as the commands above, so you
 can switch between the page and the terminal freely. Secrets are never shown in
-the NPC list. Press Ctrl-C in the terminal to stop it.
+the NPC list, only in the character information box. Press Ctrl-C in the terminal to stop it.
 
 Options: `--port 8001` uses another port (if 8000 is busy), and `--no-browser`
 skips opening the browser. The page is only reachable from your own computer.
