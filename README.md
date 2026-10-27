@@ -14,6 +14,7 @@ what has been said to it.
 | 3 | Hold a back-and-forth conversation until you type `quit` | `whoelse chat Brom` |
 | 4 | List every saved NPC (secrets are never shown) | `whoelse list-npcs` |
 | 5 | Erase one NPC's memory and keep its profile | `whoelse clear-memory "Brom"` |
+| 6 | Do all of the above in a chat page in your browser | `whoelse web` |
 
 What the NPC does with that information:
 
@@ -77,7 +78,7 @@ Never put the key inside the project folder or commit it to git.
 
 ```
 echo $ANTHROPIC_API_KEY    # should print your key, not an empty line
-whoelse --help              # should list the five commands
+whoelse --help              # should list the six commands
 whoelse list-npcs           # should show "Brom: Grumpy, suspicious tavern keeper..."
 ```
 
@@ -159,6 +160,26 @@ whoelse clear-memory "Brom"
 Deletes the NPC's conversation history and keeps its profile, so the NPC starts
 fresh but keeps the same personality and secrets.
 
+### Use the chat page in your browser
+
+```
+whoelse web
+```
+
+This starts a small web page on your own computer and opens it in your browser
+(at `http://127.0.0.1:8000/`). From the page you can:
+
+- Pick an NPC from the list on the left and chat with it. Past conversation is shown.
+- Create a new NPC with **New NPC** (the same fields as `create-npc`).
+- Erase the NPC's memory with **Clear memory**.
+
+It uses the same NPCs, memory and Claude settings as the commands above, so you
+can switch between the page and the terminal freely. Secrets are never shown in
+the NPC list. Press Ctrl-C in the terminal to stop it.
+
+Options: `--port 8001` uses another port (if 8000 is busy), and `--no-browser`
+skips opening the browser. The page is only reachable from your own computer.
+
 ## Errors you may see
 
 Each error is one plain sentence, with no traceback:
@@ -206,7 +227,9 @@ WhoElse/
 │   ├── storage.py         <- NPCStore: saves and loads NPC profiles
 │   ├── memory.py          <- NPCMemory: saves and loads chat history
 │   ├── chat.py            <- NPCChat: builds the prompt and calls Claude
-│   └── cli.py             <- the whoelse commands
+│   ├── cli.py             <- the whoelse commands
+│   ├── web.py             <- the local web server behind `whoelse web`
+│   └── static/index.html  <- the chat page
 ├── npcs/                  <- saved profiles and histories, as JSON
 │   └── brom.json          <- example NPC
 └── tests/                 <- one test file per module, plus shared helpers
@@ -217,6 +240,7 @@ WhoElse/
     ├── test_memory.py
     ├── test_chat.py
     ├── test_cli.py
+    ├── test_web.py
     └── test_integration.py
 ```
 
@@ -234,7 +258,7 @@ cli.py  ──>  NPCStore   (create, load, list NPCs)
                  └──>  Claude API (generate the reply)
 ```
 
-`models.py` is used by everything. `config.py` holds shared settings.
+`web.py` uses the same three pieces in the same way. `models.py` is used by everything. `config.py` holds shared settings.
 
 ## Running the tests
 

@@ -146,5 +146,33 @@ def clear_memory(npc_name: str):
     click.echo(f"Cleared {npc.name}'s memory.")
 
 
+@main.command("web")
+@click.option("--port", default=8000, show_default=True, help="Port to serve the page on.")
+@click.option("--no-browser", is_flag=True, help="Don't open the page automatically.")
+def web(port: int, no_browser: bool):
+    """Open a chat page in your browser to create NPCs and talk to them."""
+    import webbrowser
+
+    from npc_dm.web import WebApp, make_server
+
+    try:
+        server = make_server(WebApp(DATA_DIR), port=port)
+    except OSError as error:
+        raise click.ClickException(
+            f"Could not start on port {port} ({error.strerror}). Try: whoelse web --port 8001"
+        ) from None
+    url = f"http://127.0.0.1:{server.server_address[1]}/"
+    click.echo(f"WhoElse is running at {url}  (press Ctrl-C to stop)")
+    if not no_browser:
+        webbrowser.open(url)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        click.echo("")
+    finally:
+        server.server_close()
+    click.echo("Stopped.")
+
+
 if __name__ == "__main__":
     main()
